@@ -39,7 +39,7 @@ cnt=0
 #露光時間 ISO感度を変えて撮影
 while read -r line
 do
-	cnt=`expr $cnt + 2`
+	cnt=`expr $cnt + 1`
 	col1=`echo ${line} | cut -d ',' -f 1`
 	col2=`echo ${line} | cut -d ',' -f 2`
 	col3=`echo ${line} | cut -d ',' -f 3`
