@@ -17,8 +17,8 @@ $ sudo make install
 $ sudo ldconfig
 
 ■pythonライブラリのインストール
-$ pip install numpy
-$ pip install matplotlib
-$ pip install pandas
-$ pip install opencv-python
-$ pip install tqdm
+$ sudo pip install numpy
+$ sudo pip install matplotlib
+$ sudo pip install pandas
+$ sudo pip install opencv-python
+$ sudo pip install tqdm
