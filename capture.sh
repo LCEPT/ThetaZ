@@ -8,6 +8,9 @@ DATE=`date '+%y%m%d_%H%M%S'`
 mkdir ${DIRNAME}/${DATE}
 chmod 777 ${DIRNAME}/${DATE}
 
+#Thetaの設定可能なプロパティは以下のURL参考
+# https://github.com/ricohapi/theta-api-specs/tree/main/theta-usb-api
+
 #カメラのアクティベート
 ptpcam -i
 sleep 1.0
@@ -16,7 +19,7 @@ ptpcam -i
 ptpcam --set-property=0x500e --val=0x0001
 sleep 0.1
 #シャッター時の音声調整
-ptpcam --set-property=0x502c --val=0
+ptpcam --set-property=0x502c --val=20
 sleep 0.1
 #画像サイズを指定
 ptpcam --set-property=0x5003 --val=6720x3360
@@ -32,6 +35,9 @@ ptpcam --set-property=0x5007 --val=560
 sleep 0.1
 #スリープ機能をOFF
 ptpcam --set-property=0xd803 --val=0
+sleep 0.1
+#前撮影画像の削除
+ptpcam -D
 sleep 0.1
 
 #ループ回数カウント
