@@ -1,4 +1,4 @@
-## Last update 2023/11/23
+## Last update 2023/11/27
 
 import numpy as np
 import argparse
@@ -9,15 +9,15 @@ import time
 from numba import jit
 import cv2
 from fractions import Fraction
-
+os.environ["OPENCV_IO_ENABLE_OPENEXR"]="1"
 
 #Load images and integration
 def makeHDRimage(path, g_flag):
     #initialize matrix
     hdr_img = []
-    summed_Rimg = np.zeros((imgH, imgW), dtype='float16')
-    summed_Gimg = np.zeros((imgH, imgW), dtype='float16')
-    summed_Bimg = np.zeros((imgH, imgW), dtype='float16')
+    summed_Rimg = np.zeros((imgH, imgW), dtype='float32')
+    summed_Gimg = np.zeros((imgH, imgW), dtype='float32')
+    summed_Bimg = np.zeros((imgH, imgW), dtype='float32')
     total_Rimg = np.zeros((imgH, imgW), dtype='int8')
     total_Gimg = np.zeros((imgH, imgW), dtype='int8')
     total_Bimg = np.zeros((imgH, imgW), dtype='int8')
@@ -95,10 +95,9 @@ def makeLensMatrix(h,w,r,x1,y1,x2,y2):
 ###main()################    
 #Command Line Argument Definitions
 parser = argparse.ArgumentParser(description='Code for convert rgb image to xyz value.')
-parser.add_argument('-i', '--input', required=True, type=str, help='Path to the directory that contains images and exposure times.')
-parser.add_argument('-o', '--option', type=int, default=1, help='1:Calculate Y value only. (default), 3:Calculate XYZ values.')
+parser.add_argument('-i', '--input', required=True, type=str, help='Path to the directory that contains images and "sysInfo.csv".')
+parser.add_argument('-o', '--option', type=int, default=1, help='1:Output XYZ EXR file. (default), 2:Output Y value  CSV file only., 3:Output RGB EXR file.')
 parser.add_argument('-g', '--gamma', type=int, default=1, help='1:Input images with gamma value of 1.0. (default), 2:Input images with sRGB standard.')
-parser.add_argument('-t', '--type', type=int, default=1, help='1:Output XYZ csv files. (default), 2:Output HDR-RGB csv files.')
 args = parser.parse_args()
 
 #Parse command line arguments
@@ -152,14 +151,14 @@ print("done. {:.2f} [sec]".format(t01))
 
 #initialize matrix
 print('matrix initialize...')
-if args.type == 1:
-    matX = np.zeros((imgH,imgW), dtype='float16')
-    matY = np.zeros((imgH,imgW), dtype='float16')
-    matZ = np.zeros((imgH,imgW), dtype='float16')
-elif args.type ==2:
-    matR = np.zeros((imgH,imgW), dtype='float16')
-    matG = np.zeros((imgH,imgW), dtype='float16')
-    matB = np.zeros((imgH,imgW), dtype='float16')   
+if args.option == 1 or args.option == 2:
+    matX = np.zeros((imgH,imgW), dtype='float32')
+    matY = np.zeros((imgH,imgW), dtype='float32')
+    matZ = np.zeros((imgH,imgW), dtype='float32')
+elif args.option ==3:
+    matR = np.zeros((imgH,imgW), dtype='float32')
+    matG = np.zeros((imgH,imgW), dtype='float32')
+    matB = np.zeros((imgH,imgW), dtype='float32')   
 #Lens correction
 matLens = makeLensMatrix(imgH, imgW, imgR, c1_x, c1_y, c2_x, c2_y)
 m_init_t = time.time()
@@ -169,7 +168,7 @@ print("done. {:.2f} [sec]".format(t02))
 
 #convert RGB to XYZ
 print('convert RGB...')
-if args.type == 1:
+if args.option == 1:
     if args.gamma == 1:
         matX = RX * hdr[2] + GX * hdr[1] + BX * hdr[0]
         matY = RY * hdr[2] + GY * hdr[1] + BY * hdr[0]
@@ -186,28 +185,31 @@ if args.type == 1:
     matX_trim = matX*matLens
     matY_trim = matY*matLens
     matZ_trim = matZ*matLens
-elif args.type == 2:
+    matXYZ = cv2.merge((matZ_trim, matY_trim, matX_trim))
+elif args.option == 2:
+    if args.gamma == 1:
+        matY = RY * hdr[2] + GY * hdr[1] + BY * hdr[0]
+    elif args.gamma == 2:
+        matY = 255*(RY * hdr[2] + GY * hdr[1] + BY * hdr[0])
+    matY = np.where(matY<0.001, 0.001, matY)
+elif args.type == 3:
     matR = hdr[2]*matLens
     matG = hdr[1]*matLens
     matB = hdr[0]*matLens
+    matRGB = cv2.merge((matB, matG, matR))
 conv_done_t = time.time()
 t03 = conv_done_t - m_init_t
 print("done. {:.2f} [sec]".format(t03))
 
 
 #Output csv files
-print('saving csv files...')
-if args.type == 1:
-    if args.option == 3:
-        np.savetxt(os.path.join(args.input,'dataX.csv'), matX_trim, delimiter=",", fmt='%.3f')
-        np.savetxt(os.path.join(args.input,'dataY.csv'), matY_trim, delimiter=",", fmt='%.3f')
-        np.savetxt(os.path.join(args.input,'dataZ.csv'), matZ_trim, delimiter=",", fmt='%.3f')
-    else:
-        np.savetxt(os.path.join(args.input,'dataY.csv'), matY_trim, delimiter=",", fmt='%.3f')
-elif args.type == 2:
-    np.savetxt(os.path.join(args.input,'dataR.csv'), matR, delimiter=",", fmt='%f')
-    np.savetxt(os.path.join(args.input,'dataG.csv'), matG, delimiter=",", fmt='%f')
-    np.savetxt(os.path.join(args.input,'dataB.csv'), matB, delimiter=",", fmt='%f')
+print('saving files...')
+if args.option == 1:
+    cv2.imwrite(os.path.join(args.input,'dataXYZ.exr'), matXYZ.astype(np.float32))
+elif args.option == 2:
+    np.savetxt(os.path.join(args.input,'dataY.csv'), matY_trim, delimiter=",", fmt='%.3f')
+elif args.option == 3:
+    cv2.imwrite(os.path.join(args.input,'dataRGB.exr'), matRGB.astype(np.float32))
 end_t = time.time()
 t04 = end_t - conv_done_t
 print("done. {:.2f} [sec]".format(t04))

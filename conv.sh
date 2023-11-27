@@ -12,21 +12,27 @@ cd ${DIRNAME}
 
 #dcrawによるtiff変換
 case "$FLG" in
-	  "2") echo gamma 2.4
-				 dcraw -v -T -g 2.4 12.92 -W *.DNG
-	       ;;
-	  "3") echo gamma 2.4 output XYZ data
-				 dcraw -v -T -g 2.4 12.92 -W *.DNG
-	       ;;
-	  "4") echo gamma 1.0 output RGB data
-				 dcraw -v -T -g 1 1 -W *.DNG
-		   ;;
-	  "5") echo gamma 2.4 output RGB data
-				 dcraw -v -T -g 2.4 12.92 -W *.DNG
-	       ;;
-	  *)   echo gamma 1.0
-		     dcraw -v -T -g 1 1 -W *.DNG
-	       ;;
+	"11") echo gamma 1.0 output XYZ data
+		dcraw -v -T -g 1 1 -W *.DNG
+		;;
+	"12") echo gamma 2.4 output XYZ data
+		dcraw -v -T -g 2.4 12.92 -W *.DNG
+		;;
+	"21") echo gamma 1.0 output Y data
+		dcraw -v -T -g 1 1 -W *.DNG
+		;;
+	"22") echo gamma 2.4 output Y data
+		dcraw -v -T -g 2.4 12.92 -W *.DNG
+		;;
+	"31") echo gamma 1.0 output RGB data
+		dcraw -v -T -g 1 1 -W *.DNG
+		;;
+	"32") echo gamma 1.0 output RGB data
+		dcraw -v -T -g 2.4 12.92 -W *.DNG
+		;;
+	*)   echo gamma 1.0 output XYZ data
+		dcraw -v -T -g 1 1 -W *.DNG
+		;;
 esac
 echo raw to tiff convert done.
 
@@ -36,19 +42,25 @@ cd ${CDIR}
 
 #pythonスクリプトでXYZ変換
 case "$FLG" in
-		"2") echo gamma 2.4
-				 python3 conv_hdr_xyz.py -i ${DIRNAME} -g 2
-				 ;;
-		"3") echo gamma 2.4 output XYZ data 
-				 python3 conv_hdr_xyz.py -i ${DIRNAME} -g 2 -o 3
-				 ;;
-		"4") echo gamma 1.0 output RGB data
-				 python3 conv_hdr_xyz.py -i ${DIRNAME} -t 2
-				 ;;
-		"5") echo gamma 2.4 output RGB data 
-				 python3 conv_hdr_xyz.py -i ${DIRNAME} -g 2 -t 2
-				 ;;
-		*)   echo gamma 1.0
-		     python3 conv_hdr_xyz.py -i ${DIRNAME}
-				 ;;
+	"11") echo gamma 1.0 output XYZ data
+		python3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data} -o 1 -g 1
+		;;
+	"12") echo gamma 2.4 output XYZ data
+		pythyon3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data} -o 1 -g 2
+		;;
+	"21") echo gamma 1.0 output Y data
+		python3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data} -o 2 -g 1
+		;;
+	"22") echo gamma 2.4 output XYZ data 
+		python3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data} -g 2 -o 2
+		;;
+	"31") echo gamma 1.0 output RGB data
+		python3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data} -g 3 -o 1
+		;;
+	"32") echo gamma 2.4 output RGB data 
+		python3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data} -g 2 -o 2
+		;;
+	*)   echo gamma 1.0 output XYZ data
+		python3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data}
+		;;
 esac

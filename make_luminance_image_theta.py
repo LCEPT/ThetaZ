@@ -4,9 +4,10 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 import matplotlib.gridspec as gridspec
 from numba import jit
+import cv2
 import math
 import os
-
+os.environ["OPENCV_IO_ENABLE_OPENEXR"]="1"
 
 ##### GLOBAL VARIABLES AND CONSTANTS#####
 #fisheye center
@@ -24,11 +25,16 @@ IMGo_W = 3450
 IMGo_R = 1725
 
 def loadLuminanceFile(path):
-    matY = np.genfromtxt(
-        fname=path,
-        dtype="float",
-        delimiter=","
-    )
+    ext = os.path.splitext(os.path.basename(path))[1][1:]
+    if ext == 'csv':
+        matY = np.genfromtxt(
+            fname=path,
+            dtype="float",
+            delimiter=","
+        )
+    elif ext == 'exr':
+        hdrImg = cv2.imread(path, cv2.IMREAD_UNCHANGED)
+        matY =  hdrImg[:,:,1]
     return matY
 
 #transform to Equidistant Cylindrical Projection from Equisolidangle Projection
@@ -116,7 +122,7 @@ def cut_boundary(img):
 
 
 parser = argparse.ArgumentParser(description='Code for Pseudo Color Imaging tutorial.')
-parser.add_argument('--input', type=str, help='Path to the file that contains luminance values.')
+parser.add_argument('-i', '--input', required=True, type=str, help='Path to the file that contains luminance values.')
 args = parser.parse_args()
 if not args.input:
     parser.print_help()
@@ -128,8 +134,8 @@ matY = loadLuminanceFile(args.input)
 print('done')
 
 #輝度csvファイルの分離
-ESA_matY_F = matY[:, :3648]
-ESA_matY_B = matY[:, 3648:]
+ESA_matY_F = matY[:, 3648:]
+ESA_matY_B = matY[:, :3648]
 ESA_matY_F = np.where(ESA_matY_F>0, ESA_matY_F, np.nan)
 ESA_matY_B = np.where(ESA_matY_B>0, ESA_matY_B, np.nan)
 ESA_matY = np.concatenate([ESA_matY_F, ESA_matY_B], 1)
@@ -137,7 +143,7 @@ ESA_matY = np.concatenate([ESA_matY_F, ESA_matY_B], 1)
 #Transform to Equi-Distant Cylindrical Projection from Equi-Solid-Angle Projection
 EDC_matY_F = trans_EDC_img(ESA_matY_F)
 EDC_matY_B = trans_EDC_img(ESA_matY_B)
-EDC_matY  = np.concatenate([EDC_matY_F[:,1725:],EDC_matY_B, EDC_matY_F[:,:1725]], axis=1) 
+EDC_matY  = np.concatenate([EDC_matY_F,EDC_matY_B], axis=1) 
 
 ESA_matY_F_trim = cut_boundary(ESA_matY_F) 
 ESA_matY_B_trim = cut_boundary(ESA_matY_B) 
