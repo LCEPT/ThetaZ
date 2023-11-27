@@ -4,12 +4,12 @@
 DIRNAME=${1}
 
 #保存先ディレクトリの作成
-DATE=`date '+%y%m%d_%H%M%S'`
-mkdir ${DIRNAME}/${DATE}
-chmod 777 ${DIRNAME}/${DATE}
-
-#Thetaの設定可能なプロパティは以下のURL参考
-# https://github.com/ricohapi/theta-api-specs/tree/main/theta-usb-api
+DAY=`date '+%y%m%d'`
+TIME=`date '+%H%M%S'`
+mkdir -p ${DIRNAME}/${DAY}
+chmod 777 ${DIRNAME}/${DAY}
+mkdir ${DIRNAME}/${DAY}/${TIME}
+chmod 777 ${DIRNAME}/${DAY}/${TIME}
 
 #カメラのアクティベート
 ptpcam -i
@@ -19,7 +19,7 @@ ptpcam -i
 ptpcam --set-property=0x500e --val=0x0001
 sleep 0.1
 #シャッター時の音声調整
-ptpcam --set-property=0x502c --val=20
+ptpcam --set-property=0x502c --val=0
 sleep 0.1
 #画像サイズを指定
 ptpcam --set-property=0x5003 --val=6720x3360
@@ -36,9 +36,10 @@ sleep 0.1
 #スリープ機能をOFF
 ptpcam --set-property=0xd803 --val=0
 sleep 0.1
-#前撮影画像の削除
+#余分な画像を削除
 ptpcam -D
-sleep 0.1
+
+
 
 #ループ回数カウント
 cnt=0
@@ -60,7 +61,7 @@ do
 	sleep 0.1
 	ptpcam -c
 	sleep ${col6}
-	echo ${col1}.DNG,${col1}.tiff,${col2},${col3} >> ${DIRNAME}/${DATE}/picInfo.csv
+	echo ${col1}.DNG,${col1}.tiff,${col2},${col3} >> ${DIRNAME}/${DAY}/${TIME}/picInfo.csv
 done < ${DIRNAME}/EVlist.csv
 #list.csvの書式
 #１列目　画像No.
@@ -79,22 +80,21 @@ sudo chmod 777 *.JPG
 ls *.DNG | awk '{ printf "mv %s %02d.DNG\n", $0, NR }' | sh
 ls *.JPG | awk '{ printf "mv %s %02d.JPG\n", $0, NR }' | sh
 #画像の移動
-mv *.DNG ${DIRNAME}/${DATE}/
-mv *.JPG ${DIRNAME}/${DATE}/
+mv *.DNG ${DIRNAME}/${DAY}/${TIME}/
+mv *.JPG ${DIRNAME}/${DAY}/${TIME}/
 #撮影時のsysInfoを画像フォルダにコピー
-cp ${DIRNAME}/sysInfo.csv ${DIRNAME}/${DATE}/sysInfo.csv
+cp ${DIRNAME}/sysInfo.csv ${DIRNAME}/${DAY}/${TIME}/sysInfo.csv
 #画像の削除
 ptpcam -i
 sleep 1.0
 ptpcam -i
 ptpcam -D
 #保存された画像枚数の確認
-npic=`find ${DIRNAME}/${DATE} -name "*.DNG" | wc -l`
+npic=`find ${DIRNAME}/${DAY}/${TIME} -name "*.DNG" | wc -l`
 if [ $cnt -eq $npic ]; then
 	#保存先ディレクトリの書き出し
-	echo ${DIRNAME}/${DATE}, >> ${DIRNAME}/dirList.txt
+	echo ${DIRNAME}/${DAY}/${TIME}, >> ${DIRNAME}/${DAY}/dirList.txt
 else
 	#撮影のやり直し
 	sudo ./capture.sh ${1}
 fi
-
