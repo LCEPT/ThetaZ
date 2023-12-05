@@ -27,7 +27,7 @@ case "$FLG" in
 	"31") echo gamma 1.0 output RGB data
 		dcraw -v -T -g 1 1 -W *.DNG
 		;;
-	"32") echo gamma 1.0 output RGB data
+	"32") echo gamma 2.4 output RGB data
 		dcraw -v -T -g 2.4 12.92 -W *.DNG
 		;;
 	*)   echo gamma 1.0 output XYZ data
@@ -58,7 +58,7 @@ case "$FLG" in
 		python3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data} -g 3 -o 1
 		;;
 	"32") echo gamma 2.4 output RGB data 
-		python3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data} -g 2 -o 2
+		python3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data} -g 3 -o 2
 		;;
 	*)   echo gamma 1.0 output XYZ data
 		python3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data}
