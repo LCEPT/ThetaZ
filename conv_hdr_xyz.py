@@ -207,7 +207,7 @@ print('saving files...')
 if args.option == 1:
     cv2.imwrite(os.path.join(args.input,'dataXYZ.exr'), matXYZ.astype(np.float32))
 elif args.option == 2:
-    np.savetxt(os.path.join(args.input,'dataY.csv'), matY_trim, delimiter=",", fmt='%.3f')
+    np.savetxt(os.path.join(args.input,'dataY.csv'), matY, delimiter=",", fmt='%.3f')
 elif args.option == 3:
     cv2.imwrite(os.path.join(args.input,'dataRGB.exr'), matRGB.astype(np.float32))
 end_t = time.time()
