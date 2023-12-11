@@ -45,19 +45,19 @@ do
 		python3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data} -o 1 -g 1
 		;;
 	"12") echo gamma 2.4 output XYZ data
-		pythyon3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data} -o 1 -g 2
+		python3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data} -o 1 -g 2
 		;;
 	"21") echo gamma 1.0 output Y data
 		python3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data} -o 2 -g 1
 		;;
 	"22") echo gamma 2.4 output XYZ data 
-		python3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data} -g 2 -o 2
+		python3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data} -o 2 -g 2
 		;;
 	"31") echo gamma 1.0 output RGB data
-		python3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data} -g 3 -o 1
+		python3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data} -o 3 -g 1
 		;;
 	"32") echo gamma 2.4 output RGB data 
-		python3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data} -g 3 -o 2
+		python3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data} -o 3 -g 2
 		;;
 	*)   echo gamma 1.0 output XYZ data
 		python3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data}
