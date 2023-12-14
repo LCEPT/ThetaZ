@@ -1,4 +1,5 @@
 import numpy as np
+import cv2
 import argparse
 import os
     
@@ -16,21 +17,12 @@ with open(os.path.join(args.input, 'point.csv')) as f:
         content = f.readlines()  
 print(len(content))
 rgb_vals = []
-matR = np.genfromtxt(
-    fname = os.path.join(args.input, 'dataR.csv'),
-    dtype = "float",
-    delimiter = ","
-)
-matG = np.genfromtxt(
-    fname = os.path.join(args.input, 'dataG.csv'),
-    dtype = "float",
-    delimiter = ","
-)
-matB = np.genfromtxt(
-    fname = os.path.join(args.input, 'dataB.csv'),
-    dtype = "float",
-    delimiter = ","
-)
+
+hdrImg = cv2.imread(os.path.join(args.input, 'dataRGB.exr'), cv2.IMREAD_UNCHANGED)
+
+matR = hdrImg[:,:,2]
+matG = hdrImg[:,:,1]
+matB = hdrImg[:,:,0]
 
 #getting RGB values
 for line in content:
