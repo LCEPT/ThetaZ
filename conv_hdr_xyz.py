@@ -33,11 +33,11 @@ def makeHDRimage(path, g_flag):
         ev = 1/(float(tokens[2])*float(Fraction(tokens[3])))
         #Blue ch
         if g_flag == 1:
-            img_b = np.where( (img[:,:,2]>TH_H) | (img[:,:,2]<TH_L), 0, img[:,:,2] )
+            img_b = np.where( (img[:,:,0]>TH_H) | (img[:,:,0]<TH_L), 0, img[:,:,0] )
         elif g_flag == 2:
-            img_b = np.where( (img[:,:,2]>TH_H) | (img[:,:,2]<TH_L), 0, img[:,:,2]/255 )
+            img_b = np.where( (img[:,:,0]>TH_H) | (img[:,:,0]<TH_L), 0, img[:,:,0]/255 )
             img_b = np.where( img_b[:,:]>0.04045, ((img_b[:,:]+0.055)/1.055)**(2.4), img_b[:,:]/12.92 )
-        cnt_b = np.where( (img[:,:,2]>TH_H) | (img[:,:,2]<TH_L), 0, 1 )
+        cnt_b = np.where( (img[:,:,0]>TH_H) | (img[:,:,0]<TH_L), 0, 1 )
         summed_Bimg = summed_Bimg + ev*img_b
         total_Bimg  = total_Bimg + cnt_b
         #Green ch
@@ -51,11 +51,11 @@ def makeHDRimage(path, g_flag):
         total_Gimg  = total_Gimg + cnt_g
         #Red ch
         if g_flag == 1:
-            img_r = np.where( (img[:,:,0]>TH_H) | (img[:,:,0]<TH_L), 0, img[:,:,0] )
+            img_r = np.where( (img[:,:,2]>TH_H) | (img[:,:,2]<TH_L), 0, img[:,:,2] )
         elif g_flag == 2:
-            img_r = np.where( (img[:,:,0]>TH_H) | (img[:,:,0]<TH_L), 0, img[:,:,0]/255 )
+            img_r = np.where( (img[:,:,2]>TH_H) | (img[:,:,2]<TH_L), 0, img[:,:,2]/255 )
             img_r = np.where( img_r[:,:]>0.04045, ((img_r[:,:]+0.055)/1.055)**(2.4), img_r[:,:]/12.92 )
-        cnt_r = np.where( (img[:,:,0]>TH_H) | (img[:,:,0]<TH_L), 0, 1 )
+        cnt_r = np.where( (img[:,:,2]>TH_H) | (img[:,:,2]<TH_L), 0, 1 )
         summed_Rimg = summed_Rimg + ev*img_r
         total_Rimg  = total_Rimg + cnt_r
     #calculating the average value for each pixel
@@ -192,7 +192,7 @@ elif args.option == 2:
     elif args.gamma == 2:
         matY = 255*(RY * hdr[2] + GY * hdr[1] + BY * hdr[0])
     matY = np.where(matY<0.001, 0.001, matY)
-elif args.type == 3:
+elif args.option == 3:
     matR = hdr[2]*matLens
     matG = hdr[1]*matLens
     matB = hdr[0]*matLens

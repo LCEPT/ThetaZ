@@ -2,7 +2,8 @@ import numpy as np
 import cv2
 import argparse
 import os
-    
+os.environ["OPENCV_IO_ENABLE_OPENEXR"]="1"
+
 #main() 
 #input the location of CSV files
 parser = argparse.ArgumentParser(description='Code for pick up RGB values.')
@@ -19,10 +20,10 @@ print(len(content))
 rgb_vals = []
 
 hdrImg = cv2.imread(os.path.join(args.input, 'dataRGB.exr'), cv2.IMREAD_UNCHANGED)
-
-matR = hdrImg[:,:,2]
-matG = hdrImg[:,:,1]
-matB = hdrImg[:,:,0]
+matB, matG, matR = cv2.split(hdrImg)
+#matR = hdrImg[:,:,2]
+#matG = hdrImg[:,:,1]
+#matB = hdrImg[:,:,0]
 
 #getting RGB values
 for line in content:
