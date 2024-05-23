@@ -1,7 +1,10 @@
 #!/bin/bash
 
-#保存先の親ディレクトリをコマンドライン引数から取得
+#保存先の親ディレクトリをコマンドライン引数（1番目）から取得
 DIRNAME=${1}
+
+#撮影後の動作をコマンドライン引数（2番目）から取得
+FLG=${2}
 
 #保存先ディレクトリの作成
 DAY=`date '+%y%m%d'`
@@ -83,7 +86,7 @@ ls *.JPG | awk '{ printf "mv %s %02d.JPG\n", $0, NR }' | sh
 mv *.DNG ${DIRNAME}/${DAY}/${TIME}/
 mv *.JPG ${DIRNAME}/${DAY}/${TIME}/
 #撮影時のsysInfoを画像フォルダにコピー
-cp ${DIRNAME}/sysInfo.csv ${DIRNAME}/${DAY}/${TIME}/sysInfo.csv
+cp ${DIRNAME}/sysInfo* ${DIRNAME}/${DAY}/${TIME}
 #画像の削除
 ptpcam -i
 sleep 1.0
@@ -98,3 +101,22 @@ else
 	#撮影のやり直し
 	sudo ./capture.sh ${1}
 fi
+
+case "${FLG}" in
+	#現像変換を実行
+	"CONV11") sudo ./conv.sh ${DIRNAME}/${DAY}/${TIME} 11
+	;;
+	"CONV12") sudo ./conv.sh ${DIRNAME}/${DAY}/${TIME} 12
+	;;
+	"CONV21") sudo ./conv.sh ${DIRNAME}/${DAY}/${TIME} 21
+	;;
+	"CONV22") sudo ./conv.sh ${DIRNAME}/${DAY}/${TIME} 22
+	;;
+	"CONV31") sudo ./conv.sh ${DIRNAME}/${DAY}/${TIME} 31
+	;;
+	"CONV32") sudo ./conv.sh ${DIRNAME}/${DAY}/${TIME} 32
+	;;
+	*) echo done
+	;;
+esac
+

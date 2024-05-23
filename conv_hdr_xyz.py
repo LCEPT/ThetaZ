@@ -1,4 +1,4 @@
-## Last update 2023/12/25
+## Last update 2024/05/23
 
 import numpy as np
 import argparse
@@ -95,7 +95,8 @@ def makeLensMatrix(h,w,r,x1,y1,x2,y2):
 ###main()################    
 #Command Line Argument Definitions
 parser = argparse.ArgumentParser(description='Code for convert rgb image to xyz value.')
-parser.add_argument('-i', '--input', required=True, type=str, help='Path to the directory that contains images and "sysInfo.csv".')
+parser.add_argument('-i', '--input', required=True, type=str, help='Path to the directory that contains images and "sysInfo*.csv".')
+parser.add_argument('-s', '--system', type=str, default='sysInfo.csv', help='Input the file name of "sysInfo*.csv".')
 parser.add_argument('-o', '--option', type=int, default=1, help='1:Output XYZ EXR file. (default), 2:Output Y value  CSV file only., 3:Output RGB EXR file.')
 parser.add_argument('-g', '--gamma', type=int, default=1, help='1:Input images with gamma value of 1.0. (default), 2:Input images with sRGB standard.')
 args = parser.parse_args()
@@ -105,7 +106,7 @@ if not args.input:
     parser.print_help()
     exit(0)
 #Load system setup file
-with open(os.path.join(args.input, 'sysInfo.csv'), 'r') as f:
+with open(os.path.join(args.input, args.system), 'r') as f:
     reader = csv.reader(f)
     line = [row for row in reader]
 #print sysInfo header

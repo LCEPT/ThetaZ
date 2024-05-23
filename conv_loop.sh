@@ -13,6 +13,8 @@ do
 	col1=`echo ${line} | cut -d ',' -f 1`
 	dir_data=`basename ${col1}`
 	cd ${DIRNAME}/${dir_data}
+	#sysInfo.csvを検索
+	SYSFNAME=`ls | grep "sysInfo"`
 	#dcrawによるtiff変換
 	case "$FLG" in
 	"11") echo gamma 1.0 output XYZ data
@@ -42,25 +44,25 @@ do
 	#pythonスクリプトでXYZ変換
 	case "$FLG" in
 	"11") echo gamma 1.0 output XYZ data
-		python3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data} -o 1 -g 1
+		python3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data} -o 1 -g 1 -s ${SYSFNAME}
 		;;
 	"12") echo gamma 2.4 output XYZ data
-		python3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data} -o 1 -g 2
+		python3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data} -o 1 -g 2 -s ${SYSFNAME}
 		;;
 	"21") echo gamma 1.0 output Y data
-		python3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data} -o 2 -g 1
+		python3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data} -o 2 -g 1 -s ${SYSFNAME}
 		;;
 	"22") echo gamma 2.4 output XYZ data 
-		python3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data} -o 2 -g 2
+		python3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data} -o 2 -g 2 -s ${SYSFNAME}
 		;;
 	"31") echo gamma 1.0 output RGB data
-		python3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data} -o 3 -g 1
+		python3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data} -o 3 -g 1 -s ${SYSFNAME}
 		;;
 	"32") echo gamma 2.4 output RGB data 
-		python3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data} -o 3 -g 2
+		python3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data} -o 3 -g 2 -s ${SYSFNAME}
 		;;
 	*)   echo gamma 1.0 output XYZ data
-		python3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data}
+		python3 conv_hdr_xyz.py -i ${DIRNAME}/${dir_data} -s ${SYSFNAME}
 		;;
 	esac
 done < ${DIRNAME}/dirList.txt
