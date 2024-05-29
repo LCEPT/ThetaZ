@@ -5,6 +5,9 @@ FNAME=${1}
 #保存先の親ディレクトリをコマンドライン引数から取得
 DIRNAME=`dirname ${1}`
 
+#撮影後の動作をコマンドライン引数（2番目）から取得
+FLG=${2}
+
 #撮影予定日時に撮影を実行
 while read -r line
 do
@@ -31,7 +34,7 @@ do
     		now=`date +%s`
     	done
 		echo "shoot"
-		sudo ./capture.sh ${DIRNAME}
+		sudo ./capture.sh ${DIRNAME} ${FLG}
 	fi
 done < ${FNAME}
 
