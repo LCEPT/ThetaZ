@@ -1,4 +1,4 @@
-## Last update 2024/05/23
+## Last update 2024/07/09
 
 import numpy as np
 import argparse
@@ -194,9 +194,14 @@ elif args.option == 2:
         matY = 255*(RY * hdr[2] + GY * hdr[1] + BY * hdr[0])
     matY = np.where(matY<0.001, 0.001, matY)
 elif args.option == 3:
-    matR = hdr[2]*matLens
-    matG = hdr[1]*matLens
-    matB = hdr[0]*matLens
+    if args.gamma == 1:
+        matR = hdr[2]*matLens
+        matG = hdr[1]*matLens
+        matB = hdr[0]*matLens
+    elif args.gamma == 2:
+        matR = 255*hdr[2]*matLens
+        matG = 255*hdr[1]*matLens
+        matB = 255*hdr[0]*matLens
     matRGB = cv2.merge((matB, matG, matR))
 conv_done_t = time.time()
 t03 = conv_done_t - m_init_t
