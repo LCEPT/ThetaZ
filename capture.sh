@@ -6,6 +6,15 @@ DIRNAME=${1}
 #撮影後の動作をコマンドライン引数（2番目）から取得
 FLG=${2}
 
+# ディレクトリの属するファイルシステムの使用容量を取得
+USE_PERCENT=$(df "$DIRNAME" | awk 'NR==2 {gsub("%",""); print $5}')
+
+# 使用容量が90%以上の場合に警告を表示して終了
+if [ "$USE_PERCENT" -ge 90 ]; then
+    echo "Warning: There is insufficient storage space at the destination. Please change the destination or ensure sufficient capacity."
+    exit 1
+fi
+
 #保存先ディレクトリの作成
 DAY=`date '+%y%m%d'`
 TIME=`date '+%H%M%S'`
