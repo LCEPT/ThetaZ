@@ -1,5 +1,8 @@
-## Last update 2024/07/09
+## Last update 2025/05/06
+## L-CEPT v1.3.0
 
+import OpenEXR
+import Imath
 import numpy as np
 import argparse
 import csv
@@ -7,17 +10,27 @@ import os
 import math
 import time
 from numba import jit
+os.environ["OPENCV_IO_ENABLE_OPENEXR"]="1"
 import cv2
 from fractions import Fraction
-os.environ["OPENCV_IO_ENABLE_OPENEXR"]="1"
+import warnings
+
+#For writing header information
+SOFTWARE_V = "L-CEPT v1.3.0"
+LOCALTIME = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+UTC = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
+FORMAT = None
+CAMERA_ID = None
+LENS_ID = None
+FISHEYE_R = None
 
 #Load images and integration
 def makeHDRimage(path, g_flag):
     #initialize matrix
     hdr_img = []
-    summed_Rimg = np.zeros((imgH, imgW), dtype='float32')
-    summed_Gimg = np.zeros((imgH, imgW), dtype='float32')
-    summed_Bimg = np.zeros((imgH, imgW), dtype='float32')
+    summed_Rimg = np.zeros((imgH, imgW), dtype='float16')
+    summed_Gimg = np.zeros((imgH, imgW), dtype='float16')
+    summed_Bimg = np.zeros((imgH, imgW), dtype='float16')
     total_Rimg = np.zeros((imgH, imgW), dtype='int8')
     total_Gimg = np.zeros((imgH, imgW), dtype='int8')
     total_Bimg = np.zeros((imgH, imgW), dtype='int8')
@@ -114,6 +127,8 @@ print(line[0])
 print(line[1])
 print(line[2])
 print(line[3]) 
+CAMERA_ID = line[0][1]
+LENS_ID = line[1][1]
 ### variables setting ##############
 #fisheye center
 c1_x = 1824
@@ -124,7 +139,8 @@ c2_y = 1824
 imgH = int(line[4][1]) 
 imgW = int(line[5][1]) 
 #fisheye radius
-imgR = int(line[6][1]) 
+imgR = int(line[6][1])
+FISHEYE_R = imgR 
 #conversion matrix
 RX = float(line[7][1]) 
 GX = float(line[8][1]) 
@@ -134,7 +150,7 @@ GY = float(line[11][1])
 BY = float(line[12][1]) 
 RZ = float(line[13][1]) 
 GZ = float(line[14][1]) 
-BZ = float(line[15][1]) 
+BZ = float(line[15][1])
 #Range of RGB values to convert
 TH_H = int(line[16][1]) 
 TH_L = int(line[17][1]) 
@@ -153,13 +169,13 @@ print("done. {:.2f} [sec]".format(t01))
 #initialize matrix
 print('matrix initialize...')
 if args.option == 1 or args.option == 2:
-    matX = np.zeros((imgH,imgW), dtype='float32')
-    matY = np.zeros((imgH,imgW), dtype='float32')
-    matZ = np.zeros((imgH,imgW), dtype='float32')
+    matX = np.zeros((imgH,imgW), dtype='float16')
+    matY = np.zeros((imgH,imgW), dtype='float16')
+    matZ = np.zeros((imgH,imgW), dtype='float16')
 elif args.option ==3:
-    matR = np.zeros((imgH,imgW), dtype='float32')
-    matG = np.zeros((imgH,imgW), dtype='float32')
-    matB = np.zeros((imgH,imgW), dtype='float32')   
+    matR = np.zeros((imgH,imgW), dtype='float16')
+    matG = np.zeros((imgH,imgW), dtype='float16')
+    matB = np.zeros((imgH,imgW), dtype='float16')   
 #Lens correction
 matLens = makeLensMatrix(imgH, imgW, imgR, c1_x, c1_y, c2_x, c2_y)
 m_init_t = time.time()
@@ -208,14 +224,81 @@ t03 = conv_done_t - m_init_t
 print("done. {:.2f} [sec]".format(t03))
 
 
-#Output csv files
+#Output data files
 print('saving files...')
 if args.option == 1:
-    cv2.imwrite(os.path.join(args.input,'dataXYZ.exr'), matXYZ.astype(np.float32))
+    # XYZ チャネルを分離 (OpenCV のチャネル順：0=Z,1=Y,2=X)
+    chan_Z, chan_Y, chan_X = cv2.split(matXYZ)
+    # half precision (float16) にキャスト
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore",RuntimeWarning)
+        chan_X = chan_X.astype(np.float16)  # numpy の float16
+        chan_Y = chan_Y.astype(np.float16)
+        chan_Z = chan_Z.astype(np.float16)
+    # チャネル辞書 (numpy 配列をそのまま渡す)
+    channels = {
+        'X': chan_X,
+        'Y': chan_Y,
+        'Z': chan_Z
+    }
+    #CONVERSION_FACTOR = [RX,GX,BX,RY,GY,BY,RZ,GZ,BZ] 
+    #print(CONVERSION_FACTOR)
+    # ヘッダ辞書 (基本型をそのまま渡すだけ)
+    header = {
+        'compression'       : OpenEXR.ZIP_COMPRESSION,
+        'type'              : OpenEXR.scanlineimage,
+        'FORMAT'            : "XYZ 16-bit float",
+        'CAMERA'            : CAMERA_ID,
+        'LENS'              : LENS_ID,
+        'FISHEYE_RADIUS'    : FISHEYE_R,
+        'GAMMA'             : "1.0" if args.gamma == 1 else "sRGB",
+        'CONVERSION_FACTOR' : "{}".format(' '.join(f"{v:.6f}" for v in [RX, GX, BX, RY, GY, BY, RZ, GZ, BZ])),
+        'LOCALTIME'         : LOCALTIME,   # 例: "2025-04-22T09:30:00+09:00"
+        'GMT'               : UTC,         # 例: "2025-04-22T00:30:00Z"
+        'SOFTWARE_V'        : SOFTWARE_V
+    }
+    # 出力ファイルパス
+    output_path = os.path.join(args.input, 'dataXYZ.exr')
+    # 新 API で書き出し
+    with OpenEXR.File(header, channels) as exr:
+        exr.write(output_path)
+    print("EXR file saved to", output_path)
+    
 elif args.option == 2:
-    np.savetxt(os.path.join(args.input,'dataY.csv'), matY, delimiter=",", fmt='%.3f')
+    np.savetxt(os.path.join(args.input, 'dataY.csv'), matY, delimiter=",", fmt='%.3f')
+    
 elif args.option == 3:
-    cv2.imwrite(os.path.join(args.input,'dataRGB.exr'), matRGB.astype(np.float32))
-end_t = time.time()
-t04 = end_t - conv_done_t
-print("done. {:.2f} [sec]".format(t04))
+    # Option 3: RGB EXRファイルとして保存する例
+    # RGB チャネルを分離 (OpenCV のチャネル順：0=B,1=G,2=R)
+    chan_B, chan_G, chan_R = cv2.split(matRGB)
+    # half precision (float16) にキャスト
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore",RuntimeWarning)
+        chan_R = chan_R.astype(np.float16)  # numpy の float16
+        chan_G = chan_G.astype(np.float16)
+        chan_B = chan_B.astype(np.float16)
+    # チャネル辞書 (numpy 配列をそのまま渡す)
+    channels = {
+        'R': chan_R,
+        'G': chan_G,
+        'B': chan_B
+    }
+    # ヘッダ辞書 (基本型をそのまま渡すだけ)
+    header = {
+        'compression'       : OpenEXR.ZIP_COMPRESSION,
+        'type'              : OpenEXR.scanlineimage,
+        'FORMAT'            : "RGB 16-bit float",
+        'CAMERA'            : CAMERA_ID,
+        'LENS'              : LENS_ID,
+        'FISHEYE_RADIUS'    : FISHEYE_R,
+        'GAMMA'             : "1.0" if args.gamma == 1 else "sRGB",
+        'LOCALTIME'         : LOCALTIME,   # 例: "2025-04-22T09:30:00+09:00"
+        'GMT'               : UTC,         # 例: "2025-04-22T00:30:00Z"
+        'SOFTWARE_V'        : SOFTWARE_V
+    }
+    # 出力ファイルパス
+    output_path = os.path.join(args.input, 'dataRGB.exr')
+    # 新 API で書き出し
+    with OpenEXR.File(header, channels) as exr:
+        exr.write(output_path)
+    print("EXR file saved to", output_path)

@@ -6,15 +6,6 @@ DIRNAME=${1}
 #撮影後の動作をコマンドライン引数（2番目）から取得
 FLG=${2}
 
-# ディレクトリの属するファイルシステムの使用容量を取得
-USE_PERCENT=$(df "$DIRNAME" | awk 'NR==2 {gsub("%",""); print $5}')
-
-# 使用容量が90%以上の場合に警告を表示して終了
-if [ "$USE_PERCENT" -ge 90 ]; then
-    echo "Warning: There is insufficient storage space at the destination. Please change the destination or ensure sufficient capacity."
-    exit 1
-fi
-
 #保存先ディレクトリの作成
 DAY=`date '+%y%m%d'`
 TIME=`date '+%H%M%S'`
@@ -22,6 +13,14 @@ mkdir -p ${DIRNAME}/${DAY}
 chmod 777 ${DIRNAME}/${DAY}
 mkdir ${DIRNAME}/${DAY}/${TIME}
 chmod 777 ${DIRNAME}/${DAY}/${TIME}
+
+# ── ここからログ設定 ──
+# ログファイルパス
+LOGFILE="${DIRNAME}/${DAY}/${TIME}/capture.log"
+
+# 以降のすべての出力を tee でログに追記
+exec > >(tee -a "$LOGFILE") 2>&1
+# ── ここまでログ設定 ──
 
 #カメラのアクティベート
 ptpcam -i
@@ -52,6 +51,15 @@ sleep 0.1
 ptpcam -D
 
 
+# 指定ディレクトリ内に "*EVlist.csv" があれば最初の１つを使い、なければ従来のファイル名にフォールバック
+CSV_PATTERN="${DIRNAME}"/*EVlist.csv
+if compgen -G "${CSV_PATTERN}" > /dev/null; then
+    EVLIST_FILE=$(ls "${CSV_PATTERN}" | head -n1)
+else
+    EVLIST_FILE="${DIRNAME}/EVlist.csv"
+fi
+
+echo ">> Using EV list file: ${EVLIST_FILE}"
 
 #ループ回数カウント
 cnt=0
@@ -73,8 +81,7 @@ do
 	sleep 0.1
 	ptpcam -c
 	sleep ${col6}
-	echo ${col1}.DNG,${col1}.tiff,${col2},${col3} >> ${DIRNAME}/${DAY}/${TIME}/picInfo.csv
-done < ${DIRNAME}/EVlist.csv
+done < "${EVLIST_FILE}"
 #list.csvの書式
 #１列目　画像No.
 #２列目　ISO感度
@@ -101,14 +108,52 @@ ptpcam -i
 sleep 1.0
 ptpcam -i
 ptpcam -D
-#保存された画像枚数の確認
-npic=`find ${DIRNAME}/${DAY}/${TIME} -name "*.DNG" | wc -l`
-if [ $cnt -eq $npic ]; then
-	#保存先ディレクトリの書き出し
-	echo ${DIRNAME}/${DAY}/${TIME}, >> ${DIRNAME}/${DAY}/dirList.txt
+
+# Exif 情報を参照して picInfo.csv を生成
+#    (DNGファイル名, TIFFファイル名, ISO, ExposureTimeを昇順で出力)
+picinfo_tmp="${DIRNAME}/${DAY}/${TIME}/picInfo.csv"
+if command -v exiftool >/dev/null 2>&1; then
+    # ヘッダ行を出力
+    # DNGファイルを昇順にループ
+    for f in $(ls "${DIRNAME}/${DAY}/${TIME}"/*.DNG | sort); do
+        base=$(basename "$f" .DNG)
+		# Exif 情報を取得
+        iso=$(exiftool -ISO -s3 "$f")
+        exp=$(exiftool -ExposureTime -s3 "$f")
+        fnum=$(exiftool -FNumber -s3 "$f")
+        # CSV に書き出し
+        echo "${base}.DNG,${base}.tiff,${iso},${exp},${fnum}" >> "${picinfo_tmp}"
+    done
+    echo "Generated picInfo.csv"
 else
-	#撮影のやり直し
-	sudo ./capture.sh ${1}
+    echo "Error: exiftool not installed. picInfo.csv not generated." >&2
+    exit 1
+fi
+
+# --- EVlist.csv と照合してミスマッチがあれば再撮影 ---
+mismatch=false
+# EVlist.csv の 1列目=imageNo, 2=ISO, 3=ExposureTime
+while IFS=, read -r imgno iso_exp exp_exp _; do
+    # 新規 CSV から該当行を取得
+    line=$(grep "^${imgno}\.DNG," "${picinfo_tmp}")
+    [ -z "$line" ] && { mismatch=true; break; }
+    iso_act=$(echo "$line" | cut -d, -f3)
+    exp_act=$(echo "$line" | cut -d, -f4)
+    if [ "$iso_exp" != "$iso_act" ] || [ "$exp_exp" != "$exp_act" ]; then
+        echo ">> Mismatch for ${imgno}: expected ISO=${iso_exp},Exp=${exp_exp} but got ISO=${iso_act},Exp=${exp_act}"
+        mismatch=true
+        break
+    fi
+done < "${EVLIST_FILE}"
+
+if $mismatch; then
+    echo ">> Detected mismatch, retrying capture..."
+    sudo bash "$0" "${DIRNAME}" "${FLG}"
+    exit 1
+else
+    # 問題なければ保存先ディレクトリの書き出し
+    echo ${DIRNAME}/${DAY}/${TIME}, >> ${DIRNAME}/${DAY}/dirList.txt
+    echo ">> Captured successfully."
 fi
 
 case "${FLG}" in

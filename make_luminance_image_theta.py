@@ -4,10 +4,12 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 import matplotlib.gridspec as gridspec
 from numba import jit
-import cv2
-import math
 import os
 os.environ["OPENCV_IO_ENABLE_OPENEXR"]="1"
+import cv2
+import math
+
+
 
 ##### GLOBAL VARIABLES AND CONSTANTS#####
 #fisheye center
@@ -34,7 +36,18 @@ def loadLuminanceFile(path):
         )
     elif ext == 'exr':
         hdrImg = cv2.imread(path, cv2.IMREAD_UNCHANGED)
-        matY =  hdrImg[:,:,1]
+        if hdrImg is None:
+            raise FileNotFoundError(f"Cannot read EXR file: {path}")
+        # 単一チャンネルの場合
+        if hdrImg.ndim == 2:
+            matY = hdrImg
+        # 複数チャンネルの場合は 2 番目のチャンネルを輝度として使用
+        elif hdrImg.ndim == 3:
+            matY = hdrImg[:, :, 1]
+        else:
+            raise ValueError(f"Unsupported image dimensions: {hdrImg.shape}")
+    else:
+        raise ValueError(f"Unsupported file extension: {ext}")
     return matY
 
 #transform to Equidistant Cylindrical Projection from Equisolidangle Projection
