@@ -3,6 +3,7 @@ $ sudo apt install pip
 $ sudo apt install dcraw
 $ sudo apt install gphoto2
 $ sudo apt install libtool
+$ sudo apt install exiftool
 $ sudo apt install pkg-config
 $ sudo apt install subversion
 $ sudo apt install libusb-dev
@@ -21,5 +22,12 @@ $ sudo pip install numpy
 $ sudo pip install matplotlib
 $ sudo pip install pandas
 $ sudo pip install opencv-python
+$ sudo pip install OpenEXR
 $ sudo pip install tqdm
 $ sudo pip install numba
+######
+python3.12以降ではライブラリのインストールをプロジェクト単位で
+仮想環境を用意してインストールすることを推奨している。
+プロジェクト単位でライブラリのバージョン管理をする必要がなければ
+--break-system-packages　のオプションを用いることでインストールできる
+######

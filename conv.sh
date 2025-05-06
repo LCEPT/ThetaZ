@@ -15,6 +15,8 @@ SYSFNAME=$(ls | grep "sysInfo" | head -n1)
 # 1) Exif 情報を参照して picInfo.csv を生成
 #    (FileName, ISO, ExposureTime, FNumber をファイル名で昇順ソート)
 if command -v exiftool >/dev/null 2>&1; then
+    # 既存のpicInfo.csvを空にする（上書き用）
+    : > picInfo.csv
     # DNGファイルを昇順にループ
     for f in $(ls *.DNG | sort); do
         # Exif 情報を取得

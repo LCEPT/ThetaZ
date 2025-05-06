@@ -54,7 +54,7 @@ ptpcam -D
 # 指定ディレクトリ内に "*EVlist.csv" があれば最初の１つを使い、なければ従来のファイル名にフォールバック
 CSV_PATTERN="${DIRNAME}"/*EVlist.csv
 if compgen -G "${CSV_PATTERN}" > /dev/null; then
-    EVLIST_FILE=$(ls "${CSV_PATTERN}" | head -n1)
+    EVLIST_FILE=$(compgen -G "$CSV_PATTERN" | head -n1)
 else
     EVLIST_FILE="${DIRNAME}/EVlist.csv"
 fi
